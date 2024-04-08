@@ -12,6 +12,44 @@ class Board:
         self._add_piece('white')
         self._add_piece('black')
         
+        
+    def calc_moves(self, piece, row, col):
+        
+        #calc all the valid moves of each piece (stupid important)
+        
+        def knight_moves():
+            possible_moves = [
+                (row-2, col+1),
+                (row-2, col-1),
+                (row-1, col+2),
+                (row-1, col-2),
+                (row+2, col+1),
+                (row+2, col-1),
+                (row+1, col-2),
+                (row+1, col+2),
+            ]
+        
+        
+        
+        if isinstance(piece, Pawn):
+            pass
+        
+        elif isinstance(piece, Knight):
+            knight_moves()
+            
+        elif isinstance(piece, Bishop):
+            pass
+        
+        elif isinstance(piece, Rook):
+            pass
+        
+        elif isinstance(piece, Queen):
+            pass
+        
+        elif isinstance(piece, King):
+            pass
+        
+        
     def _create(self):
         for row in range(ROWS):
             for col in range(COLS):
@@ -37,4 +75,3 @@ class Board:
         self.squares[row_other][3] = Square(row_other, 3, Queen(color))
         #king
         self.squares[row_other][4] = Square(row_other, 4, King(color))
-        
