@@ -37,3 +37,4 @@ class Board:
         self.squares[row_other][3] = Square(row_other, 3, Queen(color))
         #king
         self.squares[row_other][4] = Square(row_other, 4, King(color))
+        aefenfi
