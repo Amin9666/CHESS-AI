@@ -7,11 +7,31 @@ class Board:
     
     def __init__(self):
         self.squares = [[0,0,0,0,0,0,0,0] for col in range(COLS)]
-    
+        self.last_moves = None
         self._create()
         self._add_piece('white')
         self._add_piece('black')
         
+    def move(self, piece, move):
+        initial = move.initial
+        final = move.final
+        
+        #move update
+        self.squares[initial.row][initial.col].piece = None
+        self.squares[final.row][final.col].piece = piece
+        
+        
+        #move
+        piece.moved = True
+        
+        #clear valid moves
+        piece.clear_moves()
+        
+        
+        self.last_move = move
+        
+    def valid_move(self, piece, move):
+        return move in piece.moves
         
     def calc_moves(self, piece, row, col):
         
@@ -159,8 +179,7 @@ class Board:
                 (0, -1),               
             ])        
         elif isinstance(piece, King): 
-            king_moves()
-        
+            king_moves()      
         
     def _create(self):
         for row in range(ROWS):
