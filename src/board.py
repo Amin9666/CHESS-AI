@@ -7,7 +7,7 @@ class Board:
     
     def __init__(self):
         self.squares = [[0,0,0,0,0,0,0,0] for col in range(COLS)]
-        self.last_moves = None
+        self.last_move = None
         self._create()
         self._add_piece('white')
         self._add_piece('black')
