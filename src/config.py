@@ -11,6 +11,7 @@ class Config:
         self.idx = 0
         self.theme = self.themes[self.idx]
         #font
+        self.font = pygame.font.Sysfont('monospace', 18, bold = True)
         self.move_sound = Sound(
             os.path.join('/Users/bigman/Documents/Code/CHESS AI /CHESS-AI git/assets/sounds/move.wav')
         )

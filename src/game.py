@@ -25,6 +25,14 @@ class Game:
                 rect = (col * SQSIZE, row * SQSIZE, SQSIZE, SQSIZE)
                 #blit
                 pygame.draw.rect(surface, color, rect) 
+                
+                #row coordinate
+                if col ==0:
+                    color = theme.bg.dark if row % 2 == 0 else theme.bg.light
+                    lbl = self.config.font.render(str(ROWS-row), 1, color)
+                    lbl_pos = (5, 5 + row * SQSIZE)
+                    #blit
+                    
     
     def show_pieces(self, surface):
         for row in range(ROWS):
@@ -90,3 +98,9 @@ class Game:
         
     def change_theme(self):
         self.config.change_theme()
+    
+    def play_sound(self, captured=False):
+        if captured:
+            self.config.capture_sound.play()
+        else: 
+            self.config.move_sound.play()
