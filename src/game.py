@@ -1,5 +1,4 @@
 import pygame
-
 from const import *
 from board import Board
 from dragger import Dragger
@@ -7,7 +6,6 @@ from config import Config
 from square import Square
 
 class Game:
-
     def __init__(self):
         self.next_player = 'white'
         self.hovered_sqr = None
@@ -109,7 +107,10 @@ class Game:
         self.next_player = 'white' if self.next_player == 'black' else 'black'
 
     def set_hover(self, row, col):
-        self.hovered_sqr = self.board.squares[row][col]
+        if 0 <= row < ROWS and 0 <= col < COLS:
+            self.hovered_sqr = self.board.squares[row][col]
+        else:
+            self.hovered_sqr = None
 
     def change_theme(self):
         self.config.change_theme()
