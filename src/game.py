@@ -14,6 +14,19 @@ class Game:
         self.config = Config()
 
     # blit methods
+    
+    def get_square_indices(self, square_notation):
+        """
+        Converts a square in algebraic notation (e.g., 'e2') to row and column indices.
+        """
+        files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']  # Files correspond to columns
+        file = square_notation[0]  # Extract the file (letter)
+        rank = square_notation[1]  # Extract the rank (number)
+
+        col = files.index(file)  # Convert file ('a'-'h') to column index (0-7)
+        row = 8 - int(rank)      # Convert rank ('1'-'8') to row index (7-0)
+
+        return row, col
 
     def show_bg(self, surface):
         theme = self.config.theme
@@ -101,8 +114,6 @@ class Game:
             # blit
             pygame.draw.rect(surface, color, rect, width=3)
 
-    # other methods
-
     def next_turn(self):
         self.next_player = 'white' if self.next_player == 'black' else 'black'
 
@@ -123,3 +134,5 @@ class Game:
 
     def reset(self):
         self.__init__()
+        
+    

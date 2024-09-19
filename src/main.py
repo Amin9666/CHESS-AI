@@ -1,5 +1,8 @@
 import pygame
 import sys
+import chess
+import chess.engine
+from stockfish import Stockfish
 
 from const import *
 from game import Game
@@ -7,12 +10,53 @@ from square import Square
 from move import Move
 
 class Main:
-
+    
     def __init__(self):
         pygame.init()
         self.screen = pygame.display.set_mode((WIDTH, HEIGHT), pygame.FULLSCREEN)
         pygame.display.set_caption('Chess')
         self.game = Game()
+
+        # Initialize Stockfish engine
+        self.stockfish = Stockfish(path="/opt/homebrew/bin/stockfish")
+        self.stockfish.set_depth(15)  # You can set the search depth here
+        self.stockfish.set_skill_level(10)  # You can adjust the skill level (0-20)
+
+    def get_stockfish_move(self):
+        """Get a move suggestion from Stockfish and apply it to the board."""
+        board = self.game.board
+
+        # Get FEN string from the board and set Stockfish's position
+        fen = board.get_fen()  # Assuming your board has a method to get the FEN notation
+        self.stockfish.set_fen_position(fen)
+
+        # Get the best move from Stockfish
+        best_move = self.stockfish.get_best_move()
+
+        # Convert the move to your game's move format
+        initial_square = best_move[:2]  # E.g., "e2"
+        final_square = best_move[2:]  # E.g., "e4"
+
+        initial_row, initial_col = self.game.get_square_indices(initial_square)
+        final_row, final_col = self.game.get_square_indices(final_square)
+
+        initial = Square(initial_row, initial_col)
+        final = Square(final_row, final_col)
+
+        move = Move(initial, final)
+
+        # Apply the move
+        piece = board.squares[initial_row][initial_col].piece
+        board.move(piece, move)
+        self.game.play_sound(False)  # No capture sound for simplicity
+
+        # Update the display
+        self.game.show_bg(self.screen)
+        self.game.show_pieces(self.screen)
+        pygame.display.update()
+
+        # Move to the next turn
+        self.game.next_turn()
 
     def mainloop(self):
         
@@ -102,7 +146,11 @@ class Main:
                             game.show_pieces(screen)
                             # next turn
                             game.next_turn()
-                    
+
+                            # Let Stockfish play if it's the next player's turn
+                            if game.next_player == 'black':  # Assuming 'black' is Stockfish's color
+                                self.get_stockfish_move()
+
                     dragger.undrag_piece()
                 
                 # key press
@@ -132,7 +180,6 @@ class Main:
                     sys.exit()
             
             pygame.display.update()
-
 
 main = Main()
 main.mainloop()

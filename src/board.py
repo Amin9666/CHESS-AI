@@ -15,47 +15,100 @@ class Board:
         self._add_pieces('white')
         self._add_pieces('black')
 
+        # Initialize castling rights
+        self.castling_rights = {
+            'K': True,
+            'Q': True,
+            'k': True,
+            'q': True
+        }
+
+        # Initialize en passant target
+        self.en_passant_target = None
+
+        # Initialize fullmove number
+        self.fullmove_number = 1  # Start with fullmove number 1
+
+        # Initialize the next player to 'white'
+        self.next_player = 'white'
+
     def move(self, piece, move, testing=False):
+        """Move a piece from the initial square to the final square.
+        Also handles special moves like en passant, castling, and promotion.
+        """
         initial = move.initial
         final = move.final
 
-        en_passant_empty = self.squares[final.row][final.col].isempty()
+        # Update en passant target if a pawn moves two squares
+        self.en_passant_target = None  # Reset en passant target after every move
+        if isinstance(piece, Pawn):
+            if abs(final.row - initial.row) == 2:  # Moved two squares forward
+                # Set the en passant target square (the square behind the pawn)
+                self.en_passant_target = Square((initial.row + final.row) // 2, initial.col)
 
-        # console board move update
+        # Handle en passant capture
+        en_passant_empty = self.squares[final.row][final.col].isempty()
+        if isinstance(piece, Pawn):
+            diff = final.col - initial.col
+            if diff != 0 and en_passant_empty:
+                # En passant capture
+                self.squares[initial.row][initial.col + diff].piece = None
+
+        # Handle castling
+        if isinstance(piece, King):
+            if abs(final.col - initial.col) == 2:  # Castling move
+                rook_col = 0 if final.col < initial.col else 7
+                rook_final_col = 3 if final.col < initial.col else 5
+                rook = self.squares[initial.row][rook_col].piece
+                self.squares[initial.row][rook_col].piece = None
+                self.squares[initial.row][rook_final_col].piece = rook
+                rook.moved = True
+
+            # Update castling rights
+            if piece.color == 'white':
+                self.castling_rights['K'] = False
+                self.castling_rights['Q'] = False
+            else:
+                self.castling_rights['k'] = False
+                self.castling_rights['q'] = False
+
+        if isinstance(piece, Rook):
+            # Update castling rights if a rook moves
+            if piece.color == 'white':
+                if initial.col == 0:
+                    self.castling_rights['Q'] = False  # White queenside rook
+                elif initial.col == 7:
+                    self.castling_rights['K'] = False  # White kingside rook
+            else:
+                if initial.col == 0:
+                    self.castling_rights['q'] = False  # Black queenside rook
+                elif initial.col == 7:
+                    self.castling_rights['k'] = False  # Black kingside rook
+
+        # Move the piece to the final square
         self.squares[initial.row][initial.col].piece = None
         self.squares[final.row][final.col].piece = piece
 
+        # Handle pawn promotion
         if isinstance(piece, Pawn):
-            # en passant capture
-            diff = final.col - initial.col
-            if diff != 0 and en_passant_empty:
-                # console board move update
-                self.squares[initial.row][initial.col + diff].piece = None
-                self.squares[final.row][final.col].piece = piece
-                if not testing:
-                    sound = Sound(
-                        os.path.join('assets/sounds/capture.wav'))
-                    sound.play()
-            
-            # pawn promotion
-            else:
-                self.check_promotion(piece, final)
+            if final.row == 0 or final.row == 7:  # Promotion row
+                self.squares[final.row][final.col].piece = Queen(piece.color)
 
-        # king castling
-        if isinstance(piece, King):
-            if self.castling(initial, final) and not testing:
-                diff = final.col - initial.col
-                rook = piece.left_rook if (diff < 0) else piece.right_rook
-                self.move(rook, rook.moves[-1])
-
-        # move
+        # Mark the piece as moved
         piece.moved = True
 
-        # clear valid moves
+        # Clear the piece's valid moves
         piece.clear_moves()
 
-        # set last move
+        # Update the last move
         self.last_move = move
+
+        # Switch the next player
+        if self.next_player == 'white':
+            self.next_player = 'black'
+        else:
+            self.next_player = 'white'
+            self.fullmove_number += 1  # Increment the fullmove number after black's move
 
     def valid_move(self, piece, move):
         return move in piece.moves
@@ -454,3 +507,51 @@ class Board:
 
         # king
         self.squares[row_other][4] = Square(row_other, 4, King(color))
+
+    def get_fen(self):
+    # 1. Piece placement
+        fen_rows = []
+        for row in self.squares:
+            empty_squares = 0
+            fen_row = ''
+            for square in row:
+                if square.piece:
+                    if empty_squares > 0:
+                        fen_row += str(empty_squares)
+                        empty_squares = 0
+                    fen_row += square.piece.symbol()  # Assuming pieces have a `symbol()` method (e.g. 'r' for black rook)
+                else:
+                    empty_squares += 1
+            if empty_squares > 0:
+                fen_row += str(empty_squares)
+            fen_rows.append(fen_row)
+        piece_placement = '/'.join(fen_rows)
+
+        # 2. Active color
+        active_color = 'w' if self.next_player == 'white' else 'b'
+
+        # 3. Castling availability
+        castling = ''
+        if self.castling_rights['K']: castling += 'K'
+        if self.castling_rights['Q']: castling += 'Q'
+        if self.castling_rights['k']: castling += 'k'
+        if self.castling_rights['q']: castling += 'q'
+        if castling == '':
+            castling = '-'
+
+        # 4. En passant target
+        if self.en_passant_target:
+            files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
+            en_passant = files[self.en_passant_target.col] + str(8 - self.en_passant_target.row)
+        else:
+            en_passant = '-'
+
+        # 5. Halfmove clock (for the 50-move rule, typically 0 for simplicity)
+        halfmove_clock = '0'
+
+        # 6. Fullmove number (starts at 1, incremented every time black moves)
+        fullmove_number = str(self.fullmove_number)
+
+        # Combine everything into a FEN string
+        fen = f"{piece_placement} {active_color} {castling} {en_passant} {halfmove_clock} {fullmove_number}"
+        return fen
